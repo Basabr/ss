@@ -64,17 +64,20 @@ public class Generation {
     }
 
     protected Generation(Game game, Board board, int step) {
-        this.game = game;
-        this.board = board;
+        this.game = Objects.requireNonNull(game, "Game cannot be null");
+        this.board = Objects.requireNonNull(board, "Board cannot be null");
         this.step = step;
     }
 
     protected Generation(Game game, int step) {
-        this.game = game;
+        this.game = Objects.requireNonNull(game, "Game cannot be null");
         this.step = step;
     }
 
     public void setType(List<Coord> coords, CellType type) {
+        Objects.requireNonNull(coords, "Coordinates list cannot be null");
+        Objects.requireNonNull(type, "CellType cannot be null");
+
         for (Coord c : coords) {
             Tile tile = board.getTile(c);
             if (tile == null)
@@ -93,6 +96,9 @@ public class Generation {
     }
 
     public static Generation createInitial(Game game, Board board) {
+        Objects.requireNonNull(game, "Game cannot be null");
+        Objects.requireNonNull(board, "Board cannot be null");
+
         game.clearGenerations();
         Generation init = new Generation(game, board, 0);
 
@@ -211,6 +217,8 @@ public class Generation {
     }
 
     public void setState(List<Coord> coords, boolean aliveness) {
+        Objects.requireNonNull(coords, "Coordinates list cannot be null");
+
         for (Coord c : coords) {
             Tile tile = board.getTile(c);
             if (tile == null)
@@ -225,6 +233,8 @@ public class Generation {
         this.snapCells();
     }
 
+    // Getters and setters
+
     public Long getId() {
         return id;
     }
@@ -238,7 +248,7 @@ public class Generation {
     }
 
     public void setGame(Game game) {
-        this.game = game;
+        this.game = Objects.requireNonNull(game, "Game cannot be null");
     }
 
     public Board getBoard() {
@@ -249,15 +259,23 @@ public class Generation {
         return Map.copyOf(energyStates);
     }
 
+    public void setEnergyStates(Map<Cell, Integer> energyStates) {
+        this.energyStates = new HashMap<>(Objects.requireNonNull(energyStates, "energyStates cannot be null"));
+    }
+
     public Map<Cell, Boolean> getCellAlivenessStates() {
         return Map.copyOf(cellAlivenessStates);
+    }
+
+    public void setCellAlivenessStates(Map<Cell, Boolean> cellAlivenessStates) {
+        this.cellAlivenessStates = new HashMap<>(Objects.requireNonNull(cellAlivenessStates, "cellAlivenessStates cannot be null"));
     }
 
     public Map<Cell, CellMood> getMoodStates() {
         return Map.copyOf(moodStates);
     }
 
-    public void setCellAlivenessStates(Map<Cell, Boolean> cellAlivenessStates) {
-        this.cellAlivenessStates = new HashMap<>(cellAlivenessStates);
+    public void setMoodStates(Map<Cell, CellMood> moodStates) {
+        this.moodStates = new HashMap<>(Objects.requireNonNull(moodStates, "moodStates cannot be null"));
     }
 }

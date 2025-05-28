@@ -3,7 +3,19 @@ package it.polito.extgol;
 import java.util.ArrayList;
 import java.util.List;
 
-import jakarta.persistence.*;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Transient;
 
 @Entity
 public class Cell implements Evolvable, Interactable {
@@ -60,11 +72,21 @@ public class Cell implements Evolvable, Interactable {
         this.game = g;
     }
 
+    public Cell(int x, int y, Board b, CellType type) {
+        this.cellCoord = new Coord(x, y);
+        this.board = b;
+        this.type = type != null ? type : CellType.BASIC;
+        this.mood = CellMood.NAIVE;
+        this.isAlive = false;
+    }
+
     @Override
     public Boolean evolve(int aliveNeighbors) {
         Boolean willLive = this.isAlive;
 
-        if (aliveNeighbors > 3 || aliveNeighbors < 2)
+        if (aliveNeighbors > 3)
+            willLive = false;
+        else if (aliveNeighbors < 2)
             willLive = false;
         else if (!this.isAlive && aliveNeighbors == 3)
             willLive = true;
@@ -73,20 +95,15 @@ public class Cell implements Evolvable, Interactable {
     }
 
     public List<Tile> getNeighbors() {
-        if (tile != null && tile.getNeighbors() != null) {
-            return List.copyOf(tile.getNeighbors());
-        }
-        return List.of();
+        return tile != null ? List.copyOf(tile.getNeighbors()) : List.of();
     }
 
     public int countAliveNeighbors() {
         int count = 0;
         if (tile != null) {
             for (Tile t : tile.getNeighbors()) {
-                Cell neighbor = t.getCell();
-                if (neighbor != null && neighbor.isAlive()) {
+                if (t.getCell() != null && t.getCell().isAlive())
                     count++;
-                }
             }
         }
         return count;
@@ -122,7 +139,7 @@ public class Cell implements Evolvable, Interactable {
 
     @Override
     public String toString() {
-        return getX() + "," + getY() + " [" + mood + ", " + type + "]";
+        return getX() + "," + getY();
     }
 
     public int getLifePoints() {
@@ -130,28 +147,20 @@ public class Cell implements Evolvable, Interactable {
     }
 
     public void setLifePoints(int lifePoints) {
-        this.lifepoints = Math.max(0, lifePoints);
+        this.lifepoints = lifePoints;
     }
 
     @Override
     public void interact(Cell otherCell) {
         if (otherCell == null) return;
 
-        switch (this.mood) {
-            case VAMPIRE -> {
-                int stolen = Math.min(1, Math.max(0, otherCell.getLifePoints()));
-                otherCell.setLifePoints(otherCell.getLifePoints() - stolen);
-                this.setLifePoints(this.getLifePoints() + stolen);
-            }
-            case HEALER -> {
-                if (this.lifepoints > 0) {
-                    this.setLifePoints(this.getLifePoints() - 1);
-                    otherCell.setLifePoints(otherCell.getLifePoints() + 1);
-                }
-            }
-            case NAIVE -> {
-                // No action
-            }
+        if (this.mood == CellMood.VAMPIRE) {
+            int stolen = Math.min(1, otherCell.getLifePoints());
+            otherCell.setLifePoints(otherCell.getLifePoints() - stolen);
+            this.setLifePoints(this.getLifePoints() + stolen);
+        } else if (this.mood == CellMood.HEALER) {
+            this.setLifePoints(Math.max(0, this.getLifePoints() - 1));
+            otherCell.setLifePoints(otherCell.getLifePoints() + 1);
         }
     }
 
@@ -171,11 +180,7 @@ public class Cell implements Evolvable, Interactable {
         return type;
     }
 
-    public void setTile(Tile tile) {
-        this.tile = tile;
-    }
-
     public Tile getTile() {
-        return tile;
+        return this.tile;
     }
 }
